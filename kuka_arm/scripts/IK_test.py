@@ -6,7 +6,7 @@ import subprocess
 from Collections import OrderedDict
 import ast
 
-def getPose(ref_link, link);
+def getPose(ref_link, link):
     result = subprocess.run('timeout 1 rosrun tf tf_echo {0} {1} .1'.format(ref_link, link),
         stdout=subprocess.PIPE).stdout.decode('utf-8')
 
