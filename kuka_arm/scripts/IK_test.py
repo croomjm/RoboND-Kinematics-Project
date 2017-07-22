@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#from IK import Kuka_IK
+from IK import Kuka_IK
 from argparse import ArgumentParser
 import subprocess
 from collections import OrderedDict
