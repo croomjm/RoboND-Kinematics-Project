@@ -3,47 +3,51 @@
 #from IK import Kuka_IK
 from argparse import ArgumentParser
 import subprocess
-from Collections import OrderedDict
+from collections import OrderedDict
 import ast
 
 def getPose(ref_link, link):
-    result = subprocess.run('timeout 1 rosrun tf tf_echo {0} {1} .1'.format(ref_link, link),
-        stdout=subprocess.PIPE).stdout.decode('utf-8')
+    print('Getting pose for base = {0} and link = {1}'.format(ref_link, link))    
+    cmd = 'timeout .5 rosrun tf tf_echo {0} {1} .1'.format(ref_link, link)
+    #print('Running command: {0}'.format(cmd))
+    position = subprocess.run(cmd + " | grep 'Translation:' | sed -n -e 's/^.*: //p'",
+        stdout=subprocess.PIPE, shell = True).stdout.decode('utf-8')
+    #print('Postion: ', position)
 
-    position = subprocess.run(["grep 'Translation:'", result],
-        stdout=subprocess.PIPE).stdout.decode('utf-8')
-
-    rotation = subprocess.run(["grep 'in RPY (radian)'", result],
-        stdout=subprocess.PIPE).stdout.decode('utf-8')
+    rotation = subprocess.run(cmd + " | grep 'in RPY (radian)' | sed -n -e 's/^.*(radian) //p'",
+        stdout=subprocess.PIPE, shell = True).stdout.decode('utf-8')
+    #print('Rotation: ', rotation)
 
     position = ast.literal_eval(position)
     rotation = ast.literal_eval(rotation)
+    #print('Pose calculation complete.')
 
     return [position, rotation]
 
-def printPose(link):
-    print('{0} pose:')
-    print('Position: {0}'.format(link['position']))
-    print('Rotation: {0}'.format(link['rotation']))
+def printPose(pose,link):
+    print('{0} pose:'.format(link))
+    print('Position: {0}'.format(pose[link]['position']))
+    print('Rotation: {0}'.format(pose[link]['rotation']))
 
-#ik = Kuka_IK()
+ik = Kuka_IK()
 
-joints = ['link 1', 'link 2', 'link 3', 'link 4',
-        'link 5', 'link 6', 'gripper_link']
+joints = ['link_1', 'link_2', 'link_3', 'link_4',
+        'link_5', 'link_6', 'gripper_link']
+vals = [None]*len(joints)
 
-pose = OrderedDict(joints)
+pose = OrderedDict(zip(joints,vals))
 
 for j in pose:
     pose[j] = {'position': None, 'rotation': None}
 
-    pose[j]['position'], pose[j]['rotation'] = getPose('base_link', 'gripper_link')
+    pose[j]['position'], pose[j]['rotation'] = getPose('base_link', j)
 
     printPose(pose[j])
 
-#[px, py, pz] = position
-#[roll, pitch, yaw] = rotation_RPY
+[px, py, pz] = position
+[roll, pitch, yaw] = rotation_RPY
 
-#joint_angles = ik.calculateJointAngles(px, py, pz, roll, pitch, yaw)
+joint_angles = ik.calculateJointAngles(px, py, pz, roll, pitch, yaw)
 
 #for i, q in enumerate(joint_angles):
 #    print()
