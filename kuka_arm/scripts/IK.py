@@ -177,8 +177,8 @@ class Kuka_IK(object):
         r24xy = (r24[0]**2 + r24[1]**2)**0.5
         r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
 
-        acos_term = acos((-l3**2 + r24_mag**2 + a2**2)/(2*a2*r24_mag))
-        theta2_term1 = pi/2 + atan2(r24z, r24xy)
+        acos_term = acos((-l3**2 + r24_mag**2 + a2**2)/(2*a2*r24_mag)).evalf()
+        theta2_term1 = (pi/2 + atan2(r24z, r24xy)).evalf()
 
         #return both possible values of theta2 given acos uncertainty
         theta2 = [theta2_term1 + acos_term, theta2_term1 - acos_term]
@@ -214,7 +214,7 @@ class Kuka_IK(object):
                 #check if joint 4 position matches wrist center command
                 #ok to set joint 4 to zero since it doesn't affect wc position in base frame
                 T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3, self.q4: 0})
-                print('Possible T0_4: ', simplify(T0_4))
+                print('Possible T0_4: ', T0_4.evalf())
                 wx, wy, wz = T0_4[:3, 0:3]
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
@@ -264,7 +264,7 @@ class Kuka_IK(object):
         T0_2 = self.T0_2.evalf(subs = {self.q1:self.q1_res})
         r24 = Matrix(self.wc) - T0_2[:3,3]
 
-        return simplify(r24)
+        return r24.evalf()
 
     def getRrpy(self):
         #EE rotation matrix
