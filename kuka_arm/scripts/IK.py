@@ -27,13 +27,13 @@ class Kuka_IK(object):
              a6:      0, alpha6:     0, d7: 0.2305+0.0725, q7: 0}
 
         # Create individual transformation matrices
-        self.T0_1 = body_fixed_transformation(s,1)
-        self.T1_2 = body_fixed_transformation(s,2)
-        self.T2_3 = body_fixed_transformation(s,3)
-        self.T3_4 = body_fixed_transformation(s,4)
-        self.T4_5 = body_fixed_transformation(s,5)
-        self.T5_6 = body_fixed_transformation(s,6)
-        self.T6_G = body_fixed_transformation(s,7)
+        self.T0_1 = self.body_fixed_transformation(s,1)
+        self.T1_2 = self.body_fixed_transformation(s,2)
+        self.T2_3 = self.body_fixed_transformation(s,3)
+        self.T3_4 = self.body_fixed_transformation(s,4)
+        self.T4_5 = self.body_fixed_transformation(s,5)
+        self.T5_6 = self.body_fixed_transformation(s,6)
+        self.T6_G = self.body_fixed_transformation(s,7)
 
         self.T0_4 = T0_1*T1_2*T2_3*T3_4
         self.T0_G = T0_4*T4_5*T5_6*T6_G
