@@ -299,8 +299,8 @@ class Kuka_IK(object):
         self.r24 = self.get_r24()
 
         ##Calculate theta2 and theta3 possibilities
-        theta2 = self.return_theta2(self.consts, self.r24)
-        theta3 = self.return_theta3(self.consts, self.r24)
+        theta2 = self.return_theta2()
+        theta3 = self.return_theta3()
 
         ##Determine which pair of theta2 and theta3 are correct
         self.q2_res, self.q3_res = self.return_valid_theta23(theta2, theta3)
