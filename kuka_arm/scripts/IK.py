@@ -35,9 +35,9 @@ class Kuka_IK(object):
         self.T5_6 = self.body_fixed_transformation(self.s,6)
         self.T6_G = self.body_fixed_transformation(self.s,7)
 
-        self.T0_4 = T0_1*T1_2*T2_3*T3_4
-        self.T0_G = T0_4*T4_5*T5_6*T6_G
-        self.T4_G = inv(T0_4)*T_G
+        self.T0_4 = self.T0_1*self.T1_2*self.T2_3*self.T3_4
+        self.T0_G = self.T0_4*self.T4_5*self.T5_6*self.T6_G
+        self.T4_G = self.T0_4.Transpose*self.T_G
 
         #Correction for orientation difference between UDRF Gripper location and
         #modified DH parameter conventions
