@@ -196,7 +196,7 @@ class Kuka_IK(object):
         r24 = self.r24
 
         r24_mag = (r24[0]**2 + r24[1]**2 + r24[1]**2)**0.5
-        phi = acos((-r24_mag^2 + a2^2 + l3^2)/(2*a2*l3))
+        phi = acos((-r24_mag**2 + a2**2 + l3**2)/(2*a2*l3))
 
         #return both possible values of theta3 given acos uncertainty
         theta3 = [pi - beta + phi, pi - beta - phi]
