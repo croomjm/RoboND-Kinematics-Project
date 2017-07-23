@@ -273,7 +273,9 @@ class Kuka_IK(object):
         self.pitch = pitch
         self.yaw = yaw
 
-        self.P = Matrix([px],[py],[pz])
+        print(px, py, pz)
+
+        self.P = Matrix([[px],[py],[pz]])
 
         # Calculate joint angles using Geometric IK method
 
