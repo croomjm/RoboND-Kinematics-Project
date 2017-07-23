@@ -27,13 +27,13 @@ class Kuka_IK(object):
              a6:      0, alpha6:     0, d7: 0.2305+0.0725, q7: 0}
 
         # Create individual transformation matrices
-        self.T0_1 = self.body_fixed_transformation(s,1)
-        self.T1_2 = self.body_fixed_transformation(s,2)
-        self.T2_3 = self.body_fixed_transformation(s,3)
-        self.T3_4 = self.body_fixed_transformation(s,4)
-        self.T4_5 = self.body_fixed_transformation(s,5)
-        self.T5_6 = self.body_fixed_transformation(s,6)
-        self.T6_G = self.body_fixed_transformation(s,7)
+        self.T0_1 = self.body_fixed_transformation(self.s,1)
+        self.T1_2 = self.body_fixed_transformation(self.s,2)
+        self.T2_3 = self.body_fixed_transformation(self.s,3)
+        self.T3_4 = self.body_fixed_transformation(self.s,4)
+        self.T4_5 = self.body_fixed_transformation(self.s,5)
+        self.T5_6 = self.body_fixed_transformation(self.s,6)
+        self.T6_G = self.body_fixed_transformation(self.s,7)
 
         self.T0_4 = T0_1*T1_2*T2_3*T3_4
         self.T0_G = T0_4*T4_5*T5_6*T6_G
@@ -45,12 +45,12 @@ class Kuka_IK(object):
         self.R_corr = self.rot_z(180)*self.rot_y(-90)
 
         ##Define constants used in inverse kinematics
-        self.beta = pi/2 + atan2(s[a3], s[d4])
-        self.l3 = (s[a3]+ s[d4])**0.5
-        self.a2 = s[a2]
-        self.a3 = s[a3]
-        self.d4 = s[d4]
-        self.d7 = s[d7]
+        self.beta = pi/2 + atan2(self.s[a3], self.s[d4])
+        self.l3 = (self.s[a3]+ self.s[d4])**0.5
+        self.a2 = self.s[a2]
+        self.a3 = self.s[a3]
+        self.d4 = self.s[d4]
+        self.d7 = self.s[d7]
 
         self.consts = {'beta': beta, 'l3': l3, 'a2': a2_const, 'a3': a3_const, 'd4': d4_const}
 
