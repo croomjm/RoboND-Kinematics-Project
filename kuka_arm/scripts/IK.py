@@ -37,7 +37,7 @@ class Kuka_IK(object):
 
         self.T0_4 = self.T0_1*self.T1_2*self.T2_3*self.T3_4
         self.T0_G = self.T0_4*self.T4_5*self.T5_6*self.T6_G
-        self.T4_G = self.T0_4.Transpose*self.T_G
+        self.T4_G = self.T0_4.T*self.T0_G
 
         #Correction for orientation difference between UDRF Gripper location and
         #modified DH parameter conventions
@@ -47,12 +47,12 @@ class Kuka_IK(object):
         ##Define constants used in inverse kinematics
         self.beta = pi/2 + atan2(self.s[self.a3], self.s[self.d4])
         self.l3 = (self.s[self.a3]+ self.s[self.d4])**0.5
-        self.a2 = self.s[self.a2]
-        self.a3 = self.s[self.a3]
-        self.d4 = self.s[self.d4]
-        self.d7 = self.s[self.d7]
+        self.a2_const = self.s[self.a2]
+        self.a3_const = self.s[self.a3]
+        self.d4_const = self.s[self.d4]
+        self.d7_const = self.s[self.d7]
 
-        self.consts = {'beta': beta, 'l3': l3, 'a2': a2_const, 'a3': a3_const, 'd4': d4_const}
+        self.consts = {'beta': self.beta, 'l3': self.l3, 'a2': self.a2_const, 'a3': self.a3_const, 'd4': self.d4_const}
 
         #initialize volatile attributes as None
         self.P = None
@@ -144,7 +144,7 @@ class Kuka_IK(object):
         #              [ 0,              0,        1]])
         
         #return R_z
-        return self.Rz(q)[:3,:3]
+        return self.Tz(q)[:3,:3]
 
     def forwardKinematics(joint_angles):
         s = dict(zip([q1,q2,q3,q4,q5,q6],joint_angles))
@@ -262,7 +262,7 @@ class Kuka_IK(object):
 
     def getWristCenter(self):
         #wrist center wc = [[wx], [wy], [wz]] in base coords
-        wrist = self.P - self.Rrpy*Matrix(3,1,[0,0,self.d7])
+        wrist = self.P - self.Rrpy*Matrix(3,1,[0,0,self.d7_const])
 
         wc = (wrist[0], wrist[1], wrist[2])
 
