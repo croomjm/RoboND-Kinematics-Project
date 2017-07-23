@@ -223,13 +223,13 @@ class Kuka_IK(object):
 
     def return_theta5(self):
         #evaluate T_04 for theta4 = 0 and known theta1, theta2, theta3
-        T_04 = self.T_04.evalf(subs = {self.q1: self.q1_res,
+        T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res,
                                        self.q2: self.q2_res,
                                        self.q3: self.q3_res,
                                        self.q4: 0})
 
         #unit vector along Z4
-        n_04 = T_04[0:3, 2]
+        n_04 = T0_4[0:3, 2]
 
         #unit vector along Z6
         n_06 = self.Rrpy[0:3, 2]
@@ -297,6 +297,7 @@ class Kuka_IK(object):
 
         ##Calculate wrist center position
         self.wc = self.getWristCenter()
+        print('Wrist center: {0}'.format(self.wc))
 
         ##Find theta1 (q1)
         self.q1_res = self.return_theta1()
