@@ -239,7 +239,7 @@ class Kuka_IK(object):
         theta5 = acos(dot_product)
 
         #determine if theta5 should be adjusted to 2*pi - theta5
-        M = T_04[0:3,0:3]*(n_06-n_04)
+        M = T0_4[0:3,0:3]*(n_06-n_04)
 
         if M[0,3]< 0:
             #if vector from n_06 to n_04 has negative X component in joint 4 frame
@@ -278,6 +278,7 @@ class Kuka_IK(object):
     def getWristCenter(self):
         #wrist center wc = [[wx], [wy], [wz]] in base coords
         wrist = self.P - self.Rrpy*Matrix(3,1,[0,0,self.d7_const])
+        wrist = wrist.evalf()
 
         wc = (wrist[0], wrist[1], wrist[2])
 
