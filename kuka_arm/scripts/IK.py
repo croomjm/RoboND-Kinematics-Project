@@ -208,7 +208,7 @@ class Kuka_IK(object):
         for t2 in theta2:
             for t3 in theta3:
                 #check if joint 4 position matches wrist center command
-                wx, wy, wz = self.T0_4.evalf(subs = {q1: self.q1_res, q2: t2, q3: t3})
+                wx, wy, wz = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3})
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
 
@@ -216,7 +216,10 @@ class Kuka_IK(object):
 
     def return_theta5(self):
         #evaluate T_04 for theta4 = 0 and known theta1, theta2, theta3
-        T_04 = self.T_04.evalf(subs = {q1: self.q1_res, q2: self.q2_res, q3: self.q3_res, q4: 0})
+        T_04 = self.T_04.evalf(subs = {self.q1: self.q1_res,
+                                       self.q2: self.q2_res,
+                                       self.q3: self.q3_res,
+                                       self.q4: 0})
 
         #unit vector along Z4
         n_04 = T_04[0:3, 2]
@@ -238,7 +241,12 @@ class Kuka_IK(object):
         return theta5
 
     def return_theta46(self):
-        T_46 = Transpose(T_04)*T_06
+        T_46 = Transpose(self.T_04)*self.T_06
+        T_46 = T_46.evalf(subs = {self.q1: self.q1_res,
+                                  self.q2: self.q2_res,
+                                  self.q3: self.q3_res,
+                                  self.q5: self.q5_res,
+                                  })
 
         theta4 = atan2(T_46[1,2], T_46[1,3])
         theta6 = atan2(-T_46[2,1], T_46[2,0])
@@ -246,7 +254,7 @@ class Kuka_IK(object):
         return [theta4, theta6]
 
     def get_r24(self):
-        T0_2 = T0_2.evalf(subs = {q1:self.q1_res})
+        T0_2 = self.T0_2.evalf(subs = {self.q1:self.q1_res})
         r24 = w - T0_2[:3,3]
 
         return r24
@@ -272,8 +280,6 @@ class Kuka_IK(object):
         self.roll = roll
         self.pitch = pitch
         self.yaw = yaw
-
-        print(px, py, pz)
 
         self.P = Matrix([[px],[py],[pz]])
 
