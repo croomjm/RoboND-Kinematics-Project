@@ -215,7 +215,7 @@ class Kuka_IK(object):
                 #ok to set joint 4 to zero since it doesn't affect wc position in base frame
                 T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3, self.q4: 0})
                 print('Possible T0_4: ', T0_4.evalf())
-                wx, wy, wz = T0_4[:3, 0:3]
+                wx, wy, wz = T0_4[:3, 3]
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
 
