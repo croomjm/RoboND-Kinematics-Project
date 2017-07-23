@@ -35,7 +35,8 @@ class Kuka_IK(object):
         self.T5_6 = self.body_fixed_transformation(self.s,6)
         self.T6_G = self.body_fixed_transformation(self.s,7)
 
-        self.T0_4 = self.T0_1*self.T1_2*self.T2_3*self.T3_4
+        self.T0_2 = self.T0_1*self.T1_2
+        self.T0_4 = self.T0_2*self.T2_3*self.T3_4
         self.T0_G = self.T0_4*self.T4_5*self.T5_6*self.T6_G
         self.T4_G = self.T0_4.T*self.T0_G
 
