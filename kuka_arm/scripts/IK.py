@@ -196,7 +196,7 @@ class Kuka_IK(object):
         beta = self.consts['beta']
         r24 = self.r24
 
-        print(r24)
+        print('R24: ',r24)
 
         r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
         phi = acos((-r24_mag**2 + a2**2 + l3**2)/(2*a2*l3))
@@ -212,8 +212,9 @@ class Kuka_IK(object):
         for t2 in theta2:
             for t3 in theta3:
                 #check if joint 4 position matches wrist center command
-                T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3})
-                print(T0_4)
+                #ok to set joint 4 to zero since it doesn't affect wc position in base frame
+                T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3, self.q4: 0})
+                print('Possible T0_4: ', simplify(T0_4))
                 wx, wy, wz = T0_4[:3, 0:3]
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
@@ -306,6 +307,9 @@ class Kuka_IK(object):
         ##Calculate theta2 and theta3 possibilities
         theta2 = self.return_theta2()
         theta3 = self.return_theta3()
+
+        print('Possible Theta 2: ', theta2)
+        print('Possible Theta 3: ', theta3)
 
         ##Determine which pair of theta2 and theta3 are correct
         self.q2_res, self.q3_res = self.return_valid_theta23(theta2, theta3)
