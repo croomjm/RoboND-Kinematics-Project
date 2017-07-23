@@ -77,10 +77,10 @@ class Kuka_IK(object):
         '''
 
         #set variables using globally-defined symbols and input i
-        theta = eval('q{0}'.format(i))
-        alpha = eval('alpha{0}'.format(i-1))
-        a = eval('a{0}'.format(i-1))
-        d = eval('d{0}'.format(i))
+        theta = eval('s[q{0}]'.format(i))
+        alpha = eval('s[alpha{0}]'.format(i-1))
+        a = eval('s[a{0}]'.format(i-1))
+        d = eval('s[d{0}]'.format(i))
 
         transform = Matrix([[            cos(theta),           -sin(theta),            0,              a],
                             [ sin(theta)*cos(alpha), cos(theta)*cos(alpha),  -sin(alpha),  -sin(alpha)*d],
