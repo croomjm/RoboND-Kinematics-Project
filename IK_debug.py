@@ -1,7 +1,11 @@
 from sympy import *
 from time import time
 from mpmath import radians
-import tf
+import tf, sys
+
+#add folder for Kuka_IK class to path
+sys.path.insert(0, 'kuka_arm/scripts/')
+from IK import Kuka_IK
 
 '''
 Format of test case is [ [[EE position],[EE orientation as quaternions]],[WC location],[joint angles]]
@@ -21,9 +25,8 @@ test_cases = {1:[[[2.16135,-1.42635,1.55109],
               3:[[[-1.3863,0.02074,0.90986],
                   [0.01735,-0.2179,0.9025,0.371016]],
                   [-1.1669,-0.17989,0.85137],
-                  [-2.99,-0.12,0.94,4.06,1.29,-4.12]],
-              4:[],
-              5:[]}
+                  [-2.99,-0.12,0.94,4.06,1.29,-4.12]]
+                  }
 
 
 def test_code(test_case):
@@ -61,7 +64,17 @@ def test_code(test_case):
     ########################################################################################
     ## Insert IK code here starting at: Define DH parameter symbols
 
-    ## YOUR CODE HERE!
+    # px,py,pz = end-effector position
+    # roll, pitch, yaw = end-effector orientation (in gazebo frame)
+    px = req.poses[x].position.x
+    py = req.poses[x].position.y
+    pz = req.poses[x].position.z
+
+    (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
+        [req.poses[x].orientation.x, req.poses[x].orientation.y,
+        req.poses[x].orientation.z, req.poses[x].orientation.w])
+
+    [theta1, theta2, theta3, theta4, theta5, theta6] = ik.calculateJointAngles(px, py, pz, roll, pitch, yaw)
 
     ## Ending at: Populate response for the IK request
     ########################################################################################
@@ -121,9 +134,6 @@ def test_code(test_case):
         print ("End effector error for y position is: %04.8f" % ee_y_e)
         print ("End effector error for z position is: %04.8f" % ee_z_e)
         print ("Overall end effector offset is: %04.8f units \n" % ee_offset)
-
-
-
 
 if __name__ == "__main__":
     # Change test case number for different scenarios
