@@ -213,6 +213,7 @@ class Kuka_IK(object):
             for t3 in theta3:
                 #check if joint 4 position matches wrist center command
                 T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3})
+                print(T0_4)
                 wx, wy, wz = T0_4[:3, 0:3]
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
