@@ -12,19 +12,19 @@ class Kuka_IK(object):
     def __init__(self):
 
         #Define DH param variables
-        q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8') #thetas
-        d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
-        a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-        alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
+        self.q1, self.q2, self.q3, self.q4, self.q5, self.q6, self.q7 = symbols('q1:8') #thetas
+        self.d1, self.d2, self.d3, self.d4, self.d5, self.d6, self.d7 = symbols('d1:8')
+        self.a0, self.a1, self.a2, self.a3, self.a4, self.a5, self.a6 = symbols('a0:7')
+        self.alpha0, self.alpha1, self.alpha2, self.alpha3, self.alpha4, self.alpha5, self.alpha6 = symbols('alpha0:7')
 
         # Modified DH params
-        self.s = {a0:      0, alpha0:     0, d1:   0.75, q1: q1, 
-             a1:   0.35, alpha1: -pi/2, d2:      0, q2: q2 - pi/2,
-             a2:   1.25, alpha2:     0, d3:      0, q3: q3,
-             a3: -0.054, alpha3: -pi/2, d4:    1.5, q4: q4,
-             a4:      0, alpha4: -pi/2, d5:      0, q5: q5,
-             a5:      0, alpha5:  pi/2, d6:      0, q6: q6,
-             a6:      0, alpha6:     0, d7: 0.2305+0.0725, q7: 0}
+        self.s = {self.a0:      0, self.alpha0:     0, self.d1:          0.75, self.q1: self.q1, 
+                  self.a1:   0.35, self.alpha1: -pi/2, self.d2:             0, self.q2: self.q2 - pi/2,
+                  self.a2:   1.25, self.alpha2:     0, self.d3:             0, self.q3: self.q3,
+                  self.a3: -0.054, self.alpha3: -pi/2, self.d4:           1.5, self.q4: self.q4,
+                  self.a4:      0, self.alpha4: -pi/2, self.d5:             0, self.q5: self.q5,
+                  self.a5:      0, self.alpha5:  pi/2, self.d6:             0, self.q6: self.q6,
+                  self.a6:      0, self.alpha6:     0, self.d7: 0.2305+0.0725, self.q7: 0}
 
         # Create individual transformation matrices
         self.T0_1 = self.body_fixed_transformation(self.s,1)
@@ -45,12 +45,12 @@ class Kuka_IK(object):
         self.R_corr = self.rot_z(180)*self.rot_y(-90)
 
         ##Define constants used in inverse kinematics
-        self.beta = pi/2 + atan2(self.s[a3], self.s[d4])
-        self.l3 = (self.s[a3]+ self.s[d4])**0.5
-        self.a2 = self.s[a2]
-        self.a3 = self.s[a3]
-        self.d4 = self.s[d4]
-        self.d7 = self.s[d7]
+        self.beta = pi/2 + atan2(self.s[self.a3], self.s[self.d4])
+        self.l3 = (self.s[self.a3]+ self.s[self.d4])**0.5
+        self.a2 = self.s[self.a2]
+        self.a3 = self.s[self.a3]
+        self.d4 = self.s[self.d4]
+        self.d7 = self.s[self.d7]
 
         self.consts = {'beta': beta, 'l3': l3, 'a2': a2_const, 'a3': a3_const, 'd4': d4_const}
 
@@ -60,12 +60,12 @@ class Kuka_IK(object):
         self.pitch = None
         self.yaw = None
         self.wc = None
-        self.q1 = None
-        self.q2 = None
-        self.q3 = None
-        self.q4 = None
-        self.q5 = None
-        self.q6 = None
+        self.q1_res = None
+        self.q2_res = None
+        self.q3_res = None
+        self.q4_res = None
+        self.q5_res = None
+        self.q6_res = None
         self.r24 = None
 
     # Define Modified DH Transformation matrix
@@ -77,10 +77,10 @@ class Kuka_IK(object):
         '''
 
         #set variables using globally-defined symbols and input i
-        theta = eval('s[q{0}]'.format(i))
-        alpha = eval('s[alpha{0}]'.format(i-1))
-        a = eval('s[a{0}]'.format(i-1))
-        d = eval('s[d{0}]'.format(i))
+        theta = eval('s[self.q{0}]'.format(i))
+        alpha = eval('s[self.alpha{0}]'.format(i-1))
+        a = eval('s[self.a{0}]'.format(i-1))
+        d = eval('s[self.d{0}]'.format(i))
 
         transform = Matrix([[            cos(theta),           -sin(theta),            0,              a],
                             [ sin(theta)*cos(alpha), cos(theta)*cos(alpha),  -sin(alpha),  -sin(alpha)*d],
@@ -208,7 +208,7 @@ class Kuka_IK(object):
         for t2 in theta2:
             for t3 in theta3:
                 #check if joint 4 position matches wrist center command
-                wx, wy, wz = self.T0_4.evalf(subs = {q1: self.q1, q2: t2, q3: t3})
+                wx, wy, wz = self.T0_4.evalf(subs = {q1: self.q1_res, q2: t2, q3: t3})
                 if (wx, wy, wz) == self.wc:
                     return [t2, t3]
 
@@ -216,7 +216,7 @@ class Kuka_IK(object):
 
     def return_theta5(self):
         #evaluate T_04 for theta4 = 0 and known theta1, theta2, theta3
-        T_04 = self.T_04.evalf(subs = {q1: self.q1, q2: self.q2, q3: self.q3, q4: 0})
+        T_04 = self.T_04.evalf(subs = {q1: self.q1_res, q2: self.q2_res, q3: self.q3_res, q4: 0})
 
         #unit vector along Z4
         n_04 = T_04[0:3, 2]
@@ -246,7 +246,7 @@ class Kuka_IK(object):
         return [theta4, theta6]
 
     def get_r24(self):
-        T0_2 = T0_2.evalf(subs = {q1:self.q1})
+        T0_2 = T0_2.evalf(subs = {q1:self.q1_res})
         r24 = w - T0_2[:3,3]
 
         return r24
@@ -284,7 +284,7 @@ class Kuka_IK(object):
         self.wc = self.getWristCenter()
 
         ##Find theta1 (q1)
-        self.q1 = self.return_theta1()
+        self.q1_res = self.return_theta1()
 
         ##Calculate r24 (vector from joint 2 to joint 4)
         self.r24 = self.get_r24()
@@ -294,12 +294,12 @@ class Kuka_IK(object):
         theta3 = return_theta3(self.consts, self.r24)
 
         ##Determine which pair of theta2 and theta3 are correct
-        self.q2, self.q3 = return_valid_theta23(theta2, theta3)
+        self.q2_res, self.q3_res = return_valid_theta23(theta2, theta3)
 
         ##Calculate theta5
-        self.q5 = return_theta5(self)
+        self.q5_res = return_theta5(self)
 
         ##Calculate theta4 and theta6
-        self.q4, self.q6 = return_theta46(self)
+        self.q4_res, self.q6_res = return_theta46(self)
 
-        return [self.q1, self.q2, self.q3, self.q4, self.q5, self.q6]
+        return [self.q1_res, self.q2_res, self.q3_res, self.q4_res, self.q5_res, self.q6_res]
