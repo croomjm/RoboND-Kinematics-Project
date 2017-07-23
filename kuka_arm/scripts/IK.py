@@ -264,7 +264,7 @@ class Kuka_IK(object):
         T0_2 = self.T0_2.evalf(subs = {self.q1:self.q1_res})
         r24 = Matrix(self.wc) - T0_2[:3,3]
 
-        return r24
+        return simplify(r24)
 
     def getRrpy(self):
         #EE rotation matrix
