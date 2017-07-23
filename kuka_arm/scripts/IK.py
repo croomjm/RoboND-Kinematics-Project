@@ -256,7 +256,7 @@ class Kuka_IK(object):
 
     def get_r24(self):
         T0_2 = self.T0_2.evalf(subs = {self.q1:self.q1_res})
-        r24 = w - T0_2[:3,3]
+        r24 = Matrix(self.wc) - T0_2[:3,3]
 
         return r24
 
