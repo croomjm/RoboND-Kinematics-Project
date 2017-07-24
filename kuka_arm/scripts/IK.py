@@ -302,6 +302,7 @@ class Kuka_IK(object):
 
         ##Find theta1 (q1)
         self.q1_res = self.return_theta1()
+        print('Theta 1: ', self.q1_res)
 
         ##Calculate r24 (vector from joint 2 to joint 4)
         self.r24 = self.get_r24()
