@@ -178,10 +178,32 @@ class Kuka_IK(object):
         r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
 
         acos_term = acos((-l3**2 + r24_mag**2 + a2**2)/(2*a2*r24_mag)).evalf()
-        theta2_term1 = (pi/2 + atan2(r24z, r24xy)).evalf()
+        theta2_term1 = (pi/2 - atan2(r24z, r24xy)).evalf()
 
         #return both possible values of theta2 given acos uncertainty
         theta2 = [theta2_term1 + acos_term, theta2_term1 - acos_term]
+
+        return theta2
+
+    def return_theta2_alternate(self):
+        #return theta 2 from
+        #l3 = const. length from joint 3 coord. sys to joint 4 coord. sys
+        #a2 = const. from DH params
+        #r24 = 3x1 vector from joint 2 to joint 4
+
+        l3 = self.consts['l3']
+        a2 = self.consts['a2']
+        r24 = self.r24
+
+        r24z = r24[2]
+        r24xy = (r24[0]**2 + r24[1]**2)**0.5
+        r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
+
+        beta1 = atan2(r24z, r24xy)
+        beta2 = asin((a2**2 - r24_mag**2 + l3**2)/(2*l3*a2)) + asin((l3 - (a2**2 - r24_mag**2 + l3**2)/(2*l3))/r24_mag)
+
+        #return both possible values of theta2 given acos uncertainty
+        theta2 = [pi/2 - beta2 + abs(beta1), pi/2 -beta2 - abs(beta1)]
 
         return theta2
 
@@ -308,7 +330,7 @@ class Kuka_IK(object):
         self.r24 = self.get_r24()
 
         ##Calculate theta2 and theta3 possibilities
-        theta2 = self.return_theta2()
+        theta2 = self.return_theta2_alternate()
         theta3 = self.return_theta3()
 
         print('Possible Theta 2: ', theta2)
