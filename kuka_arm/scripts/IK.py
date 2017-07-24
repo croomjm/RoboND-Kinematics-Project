@@ -24,7 +24,7 @@ class Kuka_IK(object):
                   self.a3: -0.054, self.alpha3: -pi/2, self.d4:           1.5, self.q4: self.q4,
                   self.a4:      0, self.alpha4: -pi/2, self.d5:             0, self.q5: self.q5,
                   self.a5:      0, self.alpha5:  pi/2, self.d6:             0, self.q6: self.q6,
-                  self.a6:      0, self.alpha6:     0, self.d7: 0.2305+0.0725, self.q7: 0}
+                  self.a6:      0, self.alpha6:     0, self.d7: 0.2305-0.0725, self.q7: 0}
 
         # Create individual transformation matrices
         self.T0_1 = self.body_fixed_transformation(self.s,1)
