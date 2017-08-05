@@ -6,6 +6,7 @@ Class for calculating inverse kinematics of the Kuka kr210 arm
 
 from mpmath import *
 from sympy import *
+import tf
 from collections import OrderedDict
 
 class Kuka_IK(object):
@@ -22,55 +23,28 @@ class Kuka_IK(object):
                   self.a1:   0.35, self.alpha1: -pi/2, self.d2:             0, self.q2: self.q2 - pi/2,
                   self.a2:   1.25, self.alpha2:     0, self.d3:             0, self.q3: self.q3,
                   self.a3: -0.054, self.alpha3: -pi/2, self.d4:           1.5, self.q4: self.q4,
-                  self.a4:      0, self.alpha4: -pi/2, self.d5:             0, self.q5: self.q5,
-                  self.a5:      0, self.alpha5:  pi/2, self.d6:             0, self.q6: self.q6,
+                  self.a4:      0, self.alpha4:  pi/2, self.d5:             0, self.q5: self.q5,
+                  self.a5:      0, self.alpha5: -pi/2, self.d6:             0, self.q6: self.q6,
                   self.a6:      0, self.alpha6:     0, self.d7: 0.2305+0.0725, self.q7: 0}
 
-        # Create individual transformation matrices
-        self.T0_1 = self.body_fixed_transformation(self.s,1)
-        self.T1_2 = self.body_fixed_transformation(self.s,2)
-        self.T2_3 = self.body_fixed_transformation(self.s,3)
-        self.T3_4 = self.body_fixed_transformation(self.s,4)
-        self.T4_5 = self.body_fixed_transformation(self.s,5)
-        self.T5_6 = self.body_fixed_transformation(self.s,6)
-        self.T6_G = self.body_fixed_transformation(self.s,7)
-
-        self.T0_2 = self.T0_1*self.T1_2
-        self.T0_4 = self.T0_2*self.T2_3*self.T3_4
-        self.T0_G = self.T0_4*self.T4_5*self.T5_6*self.T6_G
-        self.T4_G = self.T0_4.T*self.T0_G
+        self.T = self._buildTransforms(self.s)
 
         #Correction for orientation difference between UDRF Gripper location and
         #modified DH parameter conventions
         #rotate 180 degrees about z, then -90 degrees about y
-        self.R_corr = self.rot_z(180)*self.rot_y(-90)
+        self.R_corr = self._rot('Y',-90)*self._rot('Z',180)
 
         ##Define constants used in inverse kinematics
-        self.beta = pi/2 + atan2(self.s[self.a3], self.s[self.d4])
-        self.l3 = (self.s[self.a3]+ self.s[self.d4])**0.5
-        self.a2_const = self.s[self.a2]
-        self.a3_const = self.s[self.a3]
-        self.d4_const = self.s[self.d4]
-        self.d7_const = self.s[self.d7]
-
-        self.consts = {'beta': self.beta, 'l3': self.l3, 'a2': self.a2_const, 'a3': self.a3_const, 'd4': self.d4_const}
-
-        #initialize volatile attributes as None
-        self.P = None
-        self.roll = None
-        self.pitch = None
-        self.yaw = None
-        self.wc = None
-        self.q1_res = None
-        self.q2_res = None
-        self.q3_res = None
-        self.q4_res = None
-        self.q5_res = None
-        self.q6_res = None
-        self.r24 = None
+        self.consts = {'gamma': atan2(-self.s[self.a3],self.s[self.d4]),
+                       'l3': (self.s[self.a3]**2+ self.s[self.d4]**2)**0.5,
+                       'a2': self.s[self.a2],
+                       'a3': self.s[self.a3],
+                       'd1': self.s[self.d1],
+                       'd4': self.s[self.d4],
+                       'd7': self.s[self.d7]}
 
     # Define Modified DH Transformation matrix
-    def body_fixed_transformation(self, s, i):
+    def _body_fixed_transformation(self, s, i):
         '''
         Take in DH parameters for joints i-1 to i.
         Return transformation matrix from i-1 to i.
@@ -88,261 +62,193 @@ class Kuka_IK(object):
                             [ sin(theta)*sin(alpha), cos(theta)*sin(alpha),   cos(alpha),   cos(alpha)*d],
                             [                     0,                     0,            0,              1]])
 
-        return transform.subs(s)
+        return transform
 
-    def Tx(self, q):
-        #apply rotation about x
-        q *= pi/180
-        T_x = Matrix([[ 1,              0,        0, 0],
-                      [ 0,        cos(q),   -sin(q), 0],
-                      [ 0,        sin(q),    cos(q), 0],
-                      [ 0,             0,         0, 1]])
-        
-        return T_x
-        
-    def Ty(self, q):
-        #apply rotation about y 
-        q *= pi/180
-        T_y = Matrix([[  cos(q),        0,   sin(q), 0],
-                      [       0,        1,        0, 0],
-                      [ -sin(q),        0,   cos(q), 0],
-                      [       0,        0,        0, 1]])
-        
-        return T_y
+    def _buildTransforms(self, s):
+        T = {}
+        for i in range(1,8):
+            T[(i-1,i)] = self._body_fixed_transformation(s, i)
+            if i>1:
+                T[(0,i)] = T[(0,i-1)]*T[(i-1,i)]
 
-    def Tz(self, q): 
-        #apply rotation about z
-        q *= pi/180
-        T_z = Matrix([[ cos(q),   -sin(q),     0, 0],
-                      [ sin(q),    cos(q),     0, 0],
-                      [      0,         0,     1, 0],
-                      [      0,         0,     0, 1]])
-        
-        return T_z
+        T[(3,6)] = T[(3,4)]*T[(4,5)]*T[(5,6)]
 
-    def rot_x(self, q):
-        #q *= pi/180
-        #R_x = Matrix([[ 1,              0,        0],
-        #              [ 0,        cos(q), -sin(q)],
-        #              [ 0,        sin(q),  cos(q)]])
-        
-        #return R_x
-        return self.Tx(q)[:3,:3]
-        
-    def rot_y(self, q): 
-        #q *= pi/180
-        #R_y = Matrix([[ cos(q),        0,  sin(q)],
-        #              [       0,        1,        0],
-        #              [-sin(q),        0,  cos(q)]])
-        
-        #return R_y
-        return self.Ty(q)[:3,:3]
+        return T
 
-    def rot_z(self, q): 
-        #q *= pi/180
-        #R_z = Matrix([[ cos(q), -sin(q),        0],
-        #              [ sin(q),  cos(q),        0],
-        #              [ 0,              0,        1]])
-        
-        #return R_z
-        return self.Tz(q)[:3,:3]
+    def _rot(self, axis, q):
+        '''
+        Return rotation matrix about specified axis
+        given rotation angle q (in radians).
+        '''
 
-    def forwardKinematics(joint_angles):
-        s = dict(zip([q1,q2,q3,q4,q5,q6],joint_angles))
+        q *= 180/pi
+
+        if axis == 'X':
+            R = [[ 1,      0,       0],
+                 [ 0, cos(q), -sin(q)],
+                 [ 0, sin(q),  cos(q)]]
+        elif axis == 'Y':
+            R = [[  cos(q), 0, sin(q)],
+                 [       0, 1,      0],
+                 [ -sin(q), 0, cos(q)]]
+        elif axis == 'Z':
+            R = [[ cos(q), -sin(q), 0],
+                 [ sin(q),  cos(q), 0],
+                 [      0,       0, 1]]
+        else:
+            raise RuntimeError('{} is not a valid axis. Options are "X", "Y", or "Z".'.format(axis))
+
+        return Matrix(R)
+
+    def forwardKinematics(self, joint_angles):
+        '''
+        Return joint, wc, and ee positions given joint_angles
+        and precalculated transformation matrices between joints
+        '''
+
+        s = dict(zip([self.q1, self.q2, self.q3, self.q4, self.q4, self.q5, self.q6],
+              joint_angles))
 
         joint_positions = OrderedDict()
 
-        for i in ['1','2','3','4','5','6','G']:
-            eval('T_0{0} = self.T_0{0}.evalf(subs = s)'.format(i))
-            joint_positions[i] = eval('T_0{0}[0:3, 2]')
+        for i in range(1,8):
+            joint_positions[i] = self.T[(0,i)][:3,3].evalf(subs = s)
+            #print('Joint {0}: {1}'.format(i, list(joint_positions[i])))
 
-            print('Joint {0}: {1}'.format(i, joint_positions[i]))
+        return joint_positions
 
-        #return joint_positions
+    def calculateIKError(self, wc_target, ee_target, joint_angles):
+        '''
+        Calculate error between actual end effector and wrist center
+        positions versus target positions.
+        '''
 
-    def return_theta1(self):
-        return atan2(self.wc[1],self.wc[0])
+        joint_positions = self.forwardKinematics(joint_angles)
+        wc_actual = joint_positions[4]
+        ee_actual = joint_positions[7]
 
-    def return_theta2(self):
-        #return theta 2 from
-        #l3 = const. length from joint 3 coord. sys to joint 4 coord. sys
-        #a2 = const. from DH params
-        #r24 = 3x1 vector from joint 2 to joint 4
+        wc_error = (wc_target - wc_actual).norm()
+        ee_error = (ee_target - ee_actual).norm()
 
-        l3 = self.consts['l3']
-        a2 = self.consts['a2']
-        r24 = self.r24
+        return [wc_actual, wc_error, ee_actual, ee_error]
 
-        r24z = r24[2]
-        r24xy = (r24[0]**2 + r24[1]**2)**0.5
-        r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
+    def _returnTheta1(self, wc):
+        return atan2(wc[1],wc[0])
 
-        acos_term = acos((-l3**2 + r24_mag**2 + a2**2)/(2*a2*r24_mag)).evalf()
-        theta2_term1 = (pi/2 - atan2(r24z, r24xy)).evalf()
+    def _returnTheta23(self, consts, r24, default_orientation = True):
+        #return theta 2 and theta 3 using law of cosines with sides
+        ##r24 (vector from joint 2 to joint 4 coord frame)
+        ##a2 (length of link 2)
+        ##l3 (legnth of line from joint 3 to joint 4 coord frame)
+        ##angle_a between r24 and a2
+        ##angle_b between a2 and l3
+        ##gamma angle of declination of link 3
+        ##angle r24 (angle of inclination of r24 from XY plane)
 
-        #return both possible values of theta2 given acos uncertainty
-        theta2 = [theta2_term1 + acos_term, theta2_term1 - acos_term]
-
-        return theta2
-
-    def return_theta2_alternate(self):
-        #return theta 2 from
-        #l3 = const. length from joint 3 coord. sys to joint 4 coord. sys
-        #a2 = const. from DH params
-        #r24 = 3x1 vector from joint 2 to joint 4
-
-        l3 = self.consts['l3']
-        a2 = self.consts['a2']
-        r24 = self.r24
+        gamma = consts['gamma']
+        l3 = consts['l3']
+        a2 = consts['a2']
 
         r24z = r24[2]
         r24xy = (r24[0]**2 + r24[1]**2)**0.5
+        angle_r24 = atan2(r24z, r24xy)
         r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
 
-        beta1 = atan2(r24z, r24xy)
-        beta2 = asin((a2**2 - r24_mag**2 + l3**2)/(2*l3*a2)) + asin((l3 - (a2**2 - r24_mag**2 + l3**2)/(2*l3))/r24_mag)
+        angle_a = acos((-l3**2 + a2**2 + r24_mag**2)/(2*a2*r24_mag))
+        angle_b = acos((-r24_mag**2 + a2**2 + l3**2)/(2*a2*l3))
 
-        #return both possible values of theta2 given acos uncertainty
-        theta2 = [pi/2 - beta2 + abs(beta1), pi/2 -beta2 - abs(beta1)]
+        if default_orientation:
+            #if joint 4 is below vector from joint 2 to joint 3
+            theta2 = pi/2 - angle_a - angle_r24
+            theta3 = pi/2 - gamma - angle_b
+        # else:
+        #     theta2 = pi/2 - angle_r24 + a
+        #     theta3 = pi/2 - 
 
-        return theta2
+        return [theta2, theta3]
 
-    def return_theta3(self):
-        #return theta 3 from
-        #a2 = const. from DH params
-        #r24 = 3x1 vector from joint 2 to joint 4
-        #beta = const. defined as pi/2 + tan(a3/d4)
+    def _returnTheta456(self, theta1, theta2, theta3, Rrpy):
+        '''
+        Calculate theta 4, theta5, theta6 based on relations
+        between elements in the rotation matrix from frame 3 to 6.
+        '''
+        #Use rotation matrix from joint 3 to 6 to calculate
+        #theta 4, theta5, theta6
+        R_03 = self.T[(0,3)][:3,:3].evalf(subs = {self.q1: theta1,
+                                                  self.q2: theta2,
+                                                  self.q3: theta3})
 
-        a2 = self.consts['a2']
-        l3 = self.consts['l3']
-        beta = self.consts['beta']
-        r24 = self.r24
+        R_36 = R_03.T*Rrpy
+        print('R_36:')
+        pprint(R_36.evalf())
 
-        print('R24: ',r24)
+        theta4 = atan2(R_36[2,2], -R_36[0,2])
+        theta5 = atan2((R_36[0,2]**2 + R_36[2,2]**2)**0.5, R_36[1,2])
+        theta6 = atan2(-R_36[1,1], R_36[1,0])
 
-        r24_mag = (r24[0]**2 + r24[1]**2 + r24[2]**2)**0.5
-        phi = acos((-r24_mag**2 + a2**2 + l3**2)/(2*a2*l3))
+        return [theta4, theta5, theta6]
 
-        #return both possible values of theta3 given acos uncertainty
-        theta3 = [pi - beta + phi, pi - beta - phi]
-
-        return theta3
-
-    def return_valid_theta23(self, theta2, theta3):
-        #Determine which combination of theta 2 and 3 possibilities
-        #results in the correct joint 4 position
-        for t2 in theta2:
-            for t3 in theta3:
-                #check if joint 4 position matches wrist center command
-                #ok to set joint 4 to zero since it doesn't affect wc position in base frame
-                T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res, self.q2: t2, self.q3: t3, self.q4: 0})
-                print('Possible T0_4: ', T0_4.evalf())
-                wx, wy, wz = T0_4[:3, 3]
-                if (wx, wy, wz) == self.wc:
-                    return [t2, t3]
-
-        return [None, None]
-
-    def return_theta5(self):
-        #evaluate T_04 for theta4 = 0 and known theta1, theta2, theta3
-        T0_4 = self.T0_4.evalf(subs = {self.q1: self.q1_res,
-                                       self.q2: self.q2_res,
-                                       self.q3: self.q3_res,
-                                       self.q4: 0})
-
-        #unit vector along Z4
-        n_04 = T0_4[0:3, 2]
-
-        #unit vector along Z6
-        n_06 = self.Rrpy[0:3, 2]
-
-        dot_product = n_04.dot(n_06)
-
-        theta5 = acos(dot_product)
-
-        #determine if theta5 should be adjusted to 2*pi - theta5
-        M = T0_4[0:3,0:3]*(n_06-n_04)
-
-        if M[0,3]< 0:
-            #if vector from n_06 to n_04 has negative X component in joint 4 frame
-            theta5 = 2*pi - theta5
-
-        return theta5
-
-    def return_theta46(self):
-        T_46 = Transpose(self.T_04)*self.T_06
-        T_46 = T_46.evalf(subs = {self.q1: self.q1_res,
-                                  self.q2: self.q2_res,
-                                  self.q3: self.q3_res,
-                                  self.q5: self.q5_res,
-                                  })
-
-        theta4 = atan2(T_46[1,2], T_46[1,3])
-        theta6 = atan2(-T_46[2,1], T_46[2,0])
-
-        return [theta4, theta6]
-
-    def get_r24(self):
-        T0_2 = self.T0_2.evalf(subs = {self.q1:self.q1_res})
-        r24 = Matrix(self.wc) - T0_2[:3,3]
+    def _return_r24(self, wc, q1):
+        r02 = self.T[(0,2)][:3,3].evalf(subs = {self.q1: q1})
+        r24 = wc - r02
 
         return r24.evalf()
 
-    def getRrpy(self):
+    def _returnRrpy(self, quaternion):
         #EE rotation matrix
-        Rrpy = self.rot_x(self.roll)*self.rot_y(self.pitch)*self.rot_z(self.yaw)
+        Trpy = tf.transformations.quaternion_matrix(quaternion)
+        Rrpy = Matrix(Trpy[:3,:3])
 
         #apply correction to orientation to account for coord misalignment
         Rrpy = Rrpy*self.R_corr
 
         return Rrpy
 
-    def getWristCenter(self):
+    def _returnWristCenter(self, consts, EE_target, Rrpy):
         #wrist center wc = [[wx], [wy], [wz]] in base coords
-        wrist = self.P - self.Rrpy*Matrix(3,1,[0,0,self.d7_const])
-        wrist = wrist.evalf()
+        wc_target = EE_target - Rrpy*Matrix([0,0,consts['d7']])
+        wc_target = wc_target.evalf()
 
-        wc = (wrist[0], wrist[1], wrist[2])
+        return wc_target
 
-        return wc
+    def calculateJointAngles(self, px, py, pz, quaternion):
+        #Calculate end effector orientation rotation matrix
+        #from EE quaternion
+        Rrpy = self._returnRrpy(quaternion)
 
-    def calculateJointAngles(self, px, py, pz, roll, pitch, yaw):
-        self.roll = roll
-        self.pitch = pitch
-        self.yaw = yaw
+        #Calculate wrist center and end effector target positions
+        ee_target = Matrix([px, py, pz])
+        wc_target = self._returnWristCenter(self.consts, ee_target, Rrpy)
+        true_wc_target = [1.89451,-1.44302,1.69366]
+        print('Calculated wrist center target: {0}'.format(list(wc_target)))
+        print('Correct wrist center target: {0}'.format(true_wc_target))
 
-        self.P = Matrix([[px],[py],[pz]])
+        #override for debugging purposes
+        wc_target = Matrix(true_wc_target)
 
-        # Calculate joint angles using Geometric IK method
+        theta1 = self._returnTheta1(wc_target)
+        print('Theta1: {0}'.format(theta1))
 
-        ##Calculate end effector orientation rotation matrix
-        self.Rrpy = self.getRrpy()
+        #Calculate r24 (vector from joint 2 to joint 4)
+        r24 = self._return_r24(wc_target, theta1)
 
-        ##Calculate wrist center position
-        self.wc = self.getWristCenter()
-        print('Wrist center: {0}'.format(self.wc))
+        theta2, theta3 = self._returnTheta23(self.consts, r24)
+        print('Theta2: {0}'.format(theta2.evalf()))
+        print('Theta3: {0}'.format(theta3.evalf()))
 
-        ##Find theta1 (q1)
-        self.q1_res = self.return_theta1()
-        print('Theta 1: ', self.q1_res)
+        theta4, theta5, theta6 = self._returnTheta456(theta1, theta2, theta3, Rrpy)
+        print('Theta4: {0}'.format(theta4.evalf()))
+        print('Theta5: {0}'.format(theta5.evalf()))
+        print('Theta6: {0}'.format(theta6.evalf()))
 
-        ##Calculate r24 (vector from joint 2 to joint 4)
-        self.r24 = self.get_r24()
+        joint_angles = [theta1, theta2, theta3, theta4, theta5, theta6]
 
-        ##Calculate theta2 and theta3 possibilities
-        theta2 = self.return_theta2_alternate()
-        theta3 = self.return_theta3()
+        [wc_actual,
+         wc_error,
+         ee_actual,
+         ee_error] = self.calculateIKError(wc_target, ee_target, joint_angles)
 
-        print('Possible Theta 2: ', theta2)
-        print('Possible Theta 3: ', theta3)
+        print('Wrist Center Error: {0:0.4f} mm'.format(wc_error*1000))
+        print('End Effector Error: {0:0.4f} mm'.format(ee_error*1000))
 
-        ##Determine which pair of theta2 and theta3 are correct
-        self.q2_res, self.q3_res = self.return_valid_theta23(theta2, theta3)
-
-        ##Calculate theta5
-        self.q5_res = self.return_theta5()
-
-        ##Calculate theta4 and theta6
-        self.q4_res, self.q6_res = self.return_theta46()
-
-        return [self.q1_res, self.q2_res, self.q3_res, self.q4_res, self.q5_res, self.q6_res]
+        return [joint_angles, wc_actual, wc_error, ee_actual, ee_error]
