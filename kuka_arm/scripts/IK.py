@@ -8,6 +8,7 @@ from mpmath import *
 from sympy import *
 import tf
 from collections import OrderedDict
+import numpy as np
 
 class Kuka_IK(object):
     def __init__(self):
@@ -32,7 +33,7 @@ class Kuka_IK(object):
         #Correction for orientation difference between UDRF Gripper location and
         #modified DH parameter conventions
         #rotate 180 degrees about z, then -90 degrees about y
-        self.R_corr = self._rot('Y',-90)*self._rot('Z',180)
+        self.R_corr = self._rot('Z',180)*self._rot('Y',-90)
 
         ##Define constants used in inverse kinematics
         self.consts = {'gamma': atan2(-self.s[self.a3],self.s[self.d4]),
@@ -81,7 +82,7 @@ class Kuka_IK(object):
         given rotation angle q (in radians).
         '''
 
-        q *= 180/pi
+        q *= pi/180.
 
         if axis == 'X':
             R = [[ 1,      0,       0],
@@ -180,17 +181,17 @@ class Kuka_IK(object):
 
         R_36 = R_03.T*Rrpy
         #print('R_36:')
-        #pprint(R_36.evalf())
+        #print(R_36.evalf())
 
         theta4 = atan2(R_36[2,2], -R_36[0,2])
-        theta5 = atan2((R_36[0,2]**2 + R_36[2,2]**2)**0.5, R_36[1,2])
+        theta5 = acos(R_36[1,2])#atan2((R_36[0,2]**2 + R_36[2,2]**2)**0.5, R_36[1,2])
         theta6 = atan2(-R_36[1,1], R_36[1,0])
 
-        R_36_calc = T[(3,6)][:3,:3].evalf(subs = {self.q4: theta4,
-                                                  self.q5: theta5,
-                                                  self.q6: theta6})
+        #R_36_calc = self.T[(3,6)][:3,:3].evalf(subs = {self.q4: theta4,
+        #                                               self.q5: theta5,
+        #                                               self.q6: theta6})
 
-        pprint(R_36_calc - R_36)
+        #pprint(R_36_calc.evalf() - R_36.evalf)
 
         return [theta4, theta5, theta6]
 
@@ -205,14 +206,17 @@ class Kuka_IK(object):
         Trpy = tf.transformations.quaternion_matrix(quaternion)
         Rrpy = Matrix(Trpy[:3,:3])
 
+        #roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        #Rrpy = self._rot('Z', yaw)*self._rot('Y', pitch)*self._rot('X', roll)
+
         #apply correction to orientation to account for coord misalignment
         Rrpy = Rrpy*self.R_corr
 
         return Rrpy
 
-    def _returnWristCenter(self, consts, EE_target, Rrpy):
+    def _returnWristCenter(self, consts, ee_target, Rrpy):
         #wrist center wc = [[wx], [wy], [wz]] in base coords
-        wc_target = EE_target - Rrpy*Matrix([0,0,consts['d7']])
+        wc_target = ee_target - Rrpy*Matrix([0,0,consts['d7']])
         wc_target = wc_target.evalf()
 
         return wc_target
@@ -225,12 +229,6 @@ class Kuka_IK(object):
         #Calculate wrist center and end effector target positions
         ee_target = Matrix([px, py, pz])
         wc_target = self._returnWristCenter(self.consts, ee_target, Rrpy)
-        true_wc_target = [1.89451,-1.44302,1.69366]
-        print('Calculated wrist center target: {0}'.format(list(wc_target)))
-        print('Correct wrist center target: {0}'.format(true_wc_target))
-
-        #override for debugging purposes
-        wc_target = Matrix(true_wc_target)
 
         theta1 = self._returnTheta1(wc_target)
         print('Theta1: {0}'.format(theta1))
