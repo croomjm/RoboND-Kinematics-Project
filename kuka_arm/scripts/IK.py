@@ -179,12 +179,18 @@ class Kuka_IK(object):
                                                   self.q3: theta3})
 
         R_36 = R_03.T*Rrpy
-        print('R_36:')
-        pprint(R_36.evalf())
+        #print('R_36:')
+        #pprint(R_36.evalf())
 
         theta4 = atan2(R_36[2,2], -R_36[0,2])
         theta5 = atan2((R_36[0,2]**2 + R_36[2,2]**2)**0.5, R_36[1,2])
         theta6 = atan2(-R_36[1,1], R_36[1,0])
+
+        R_36_calc = T[(3,6)][:3,:3].evalf(subs = {self.q4: theta4,
+                                                  self.q5: theta5,
+                                                  self.q6: theta6})
+
+        pprint(R_36_calc - R_36)
 
         return [theta4, theta5, theta6]
 
