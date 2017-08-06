@@ -26,6 +26,8 @@
 [Theta1]: ...
 
 
+
+
 ## [Rubric](https://review.udacity.com/#!/rubrics/972/view) Points
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
@@ -42,6 +44,7 @@ You're reading it!
 The content of the URDF file shows the following:
 
 Link | Position (x,y,z) in m | Joint Axis | Frame Rotation (rpy) | Min Rotation (deg) | Max Rotation (deg)
+:---:|:---:|:---:|:---:|:---:|:---:
 Base | (0, 0, 0) | (0, 0, 0) | (0, 0, 0) | N/A | N/A
 1 | (0, 0, 0.33) | (0, 0, 1) | (0, 0, 0) | -185 | 185
 2 | (0.35, 0, 0.42) | (0, 1, 0) | (0, 0, 0) | -45 | 85
@@ -58,21 +61,22 @@ To derive the modified DH parameters, I used definitions as shown in the image b
 ![Modified DH Parameters Definitions][DH_parameters]
 
 Where:
- -\alpha<sub>​i−1</sub>​​  (twist angle) = angle between ​hat{Z}<sub>i-1</sub> and hat{Z}<sub>i</sub> measured about hat{X}<sub>i-1</sub>in a right-hand sense
- -a<sub>i-1</sub> (link length) = distance from hat{Z}<sub>i-1</sub> to hat{Z}<sub>i</sub> measured along hat{X}<sub>i-1</sub> where hat{X}<sub>i-1</sub> is perpendicular to both hat{Z}<sub>i-1</sub> and hat{Z}<sub>i</sub>
- -d<sub>i</sub> (link offset) = signed distance from hat{X}<sub>i</sub> measured along hat{Z}<sub>i</sub>
- -\theta<sub>i</sub> (joint angle) = angle between hat{X}<sub>i-1</sub> and hat{X}<sub>i</sub> measured about hat{Z}<sub>i</sub> in a right-hand sense
+ * &#945;<sub>i−1</sub>  (twist angle) = angle between Z<sub>i-1</sub> and Z<sub>i</sub> measured about X<sub>i-1</sub>in a right-hand sense
+ * a<sub>i-1</sub> (link length) = distance from Z<sub>i-1</sub> to Z<sub>i</sub> measured along X<sub>i-1</sub> where X<sub>i-1</sub> is perpendicular to both Z<sub>i-1</sub> and Z<sub>i</sub>
+ * d<sub>i</sub> (link offset) = signed distance from X<sub>i</sub> measured along Z<sub>i</sub>
+ * &#952;<sub>i</sub> (joint angle) = angle between X<sub>i-1</sub> and X<sub>i</sub> measured about Z<sub>i</sub> in a right-hand sense
 
 For the Kuka KR210, the DH parameter layout looks as follows:
 ![KR210 DH Parameters][KR210_DH_params]
 
-i | a<sub>i-1</sub> (m) | \alpha<sub>i-1</sub> (deg) | d<sub>i</sub> (m) | \theta<sub>i</sub> (deg)
-1 | 0 | 0 | 0.75 | \theta<sub>i</sub>
-2 | 0.35 | -90 | 0 | \theta<sub>2</sub>-90
-3 | 1.25 | 0 | 0 | \theta<sub>3</sub>
-4 | -0.054 | -90 | 1.5 | \theta<sub>4</sub>
-5 | 0 | 90 | 0 | \theta<sub>5</sub>
-6 | 0 | -90 | 0 | \theta<sub>6</sub>
+i | a<sub>i-1</sub> (m) | &#945;<sub>i-1</sub> (deg) | d<sub>i</sub> (m) | &#952;<sub>i</sub> (deg)
+:---:|:---:|:---:|:---:|:---:
+1 | 0 | 0 | 0.75 | &#952;<sub>i</sub>
+2 | 0.35 | -90 | 0 | &#952;<sub>2</sub>-90
+3 | 1.25 | 0 | 0 | &#952;<sub>3</sub>
+4 | -0.054 | -90 | 1.5 | &#952;<sub>4</sub>
+5 | 0 | 90 | 0 | &#952;<sub>5</sub>
+6 | 0 | -90 | 0 | &#952;<sub>6</sub>
 7 (gripper) | 0 | 0 | 0.303 | 0
 
 #### 2. Create Individual Coordinate Frame Transforms
@@ -86,11 +90,11 @@ transform = Matrix([[            cos(theta),           -sin(theta),            0
                     [                     0,                     0,            0,              1]])
 ```
 
-Where
- -`theta` = \theta<sub>i</sub>
- -`alpha` = \alpha<sub>i-1</sub>
- -`a` = a<sub>i-1</sub>
- -`d` = d<sub>i</sub>
+Where:
+ * `theta` = &#952;<sub>i</sub>
+ *  `alpha` = &#945;<sub>i-1</sub>
+ * `a` = a<sub>i-1</sub>
+ * `d` = d<sub>i</sub>
 
 To build the higher level transformations, I used the method `build_transformations()` as defined below:
 
@@ -168,30 +172,35 @@ def _returnRrpy(self, quaternion):
 
 To find the wrist center, I used fairly straight-forward trigonometry:
 
- 1. \theta<sub>1</sub>:
+ 1. &#952;<sub>1</sub>:
 
- \theta<sub>1</sub> = atan2(WC<sub>y</sub>, WC<sub>x</sub>
+ &#952;<sub>1</sub> = atan2(WC<sub>y</sub>, WC<sub>x</sub>
 
  ![Calculating Theta 1][Theta 1]
 
- 2. \theta<sub>2</sub> and \theta<sub>3</sub>:
+ 2. &#952;<sub>2</sub> and &#952;<sub>3</sub>:
 
- To calculate \theta<sub>2</sub> and \theta<sub>3</sub>, I used the law of cosines combined with the construction shown below.
+ To calculate &#952;<sub>2</sub> and &#952;<sub>3</sub>, I used the law of cosines combined with the construction shown below.
 
  ![Theta 2 and 3 Construction][Law of Cosines]
 
  The construction shows:
-  *Sides:
-   *link 2 (length a<sub>2</sub>)
-   *\vec{r<sub>24</sub>}, a vector from the joint 2 frame to the joint 4 frame
-   *link 3 (as drawn directly from link 3 frame to the link 4 frame)
-  *Angles:
-   *a, the angle between \vec{r<sub>24</sub>} and link 2
-   *b, the angle between link 2 and link 3
-   *angle \vec{r<sub>24</sub>}, the angle from the xy plane (base link) to \vec{r<sub>24</sub>}
+  * Sides:
+   * link 2 (length a<sub>2</sub>)
+   * r<sub>24</sub>, a vector from the joint 2 frame to the joint 4 frame
+   * link 3 (as drawn directly from link 3 frame to the link 4 frame)
+  * Angles:
+   * a, the angle between \vec{r<sub>24</sub>} and link 2
+   * b, the angle between link 2 and link 3
+   * angle r<sub>24</sub>, the angle from the xy plane (base link) to \vec{r<sub>24</sub>}
 
  The following equations are used to generate the correct values for \theta<sub>2</sub> and \theta<sub>3</sub>:
-  *l<sub>3</sub> = \sqrt{d<sub>4</sub><sup>2</sup> + a<sub>3</sub><sup>2</sup>}
+  * l<sub>3</sub> = (d<sub>4</sub><sup>2</sup> + a<sub>3</sub><sup>2</sup>)<sup>0.5</sup>
+  * angle r<sub>24</sub> = atan2(r<sub>24,z</sub>, r<sub>24,xy</sub>
+  * \|r<sub>24</sub>\| = (r<sub>24,z</sub><sup>2</sup> + r<sub>24,xy</sub><sup>2</sup>)<sup>0.5</sup>
+  
+ From the law of cosines, we can see that:
+  l<sub>3</sub><sup>2</sup> = a<sub>2</sub><sup>2</sup> + \|r<sub>24</sub>\| - 2a<sub>2</sub>\|r<sub>24</sub>\|cos(a)
 
 
 And here's another image! 
