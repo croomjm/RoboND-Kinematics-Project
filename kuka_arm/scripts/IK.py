@@ -252,7 +252,7 @@ class Kuka_IK(object):
          ee_actual,
          ee_error] = self.calculateIKError(wc_target, ee_target, joint_angles)
 
-        print('Wrist Center Error: {0:0.4f} mm'.format(wc_error*1000))
-        print('End Effector Error: {0:0.4f} mm'.format(ee_error*1000))
+        print('Wrist Center Error: {0}'.format(wc_error))
+        print('End Effector Error: {0}'.format(ee_error))
 
         return [joint_angles, wc_actual, wc_error, ee_actual, ee_error]

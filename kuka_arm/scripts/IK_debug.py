@@ -79,13 +79,13 @@ def test_code(test_case):
 
     ik = Kuka_IK()
 
-    [joint_angles, wc, wc_error, gripper, gripper_error] = ik.calculateJointAngles(px, py, pz, quaternion)
+    [joint_angles, wc_actual, wc_error, ee_actual, ee_error] = ik.calculateJointAngles(px, py, pz, quaternion)
 
     [theta1, theta2, theta3, theta4, theta5, theta6] = joint_angles
 
     ## For error analysis please set the following variables of your WC location and EE location in the format of [x,y,z]
-    your_wc = wc # <--- Load your calculated WC values in this array
-    your_ee = gripper # <--- Load your calculated end effector value from your forward kinematics
+    your_wc = wc_actual # <--- Load your calculated WC values in this array
+    your_ee = ee_actual # <--- Load your calculated end effector value from your forward kinematics
     ########################################################################################
 
     ## Error analysis
@@ -133,5 +133,7 @@ def test_code(test_case):
 
 if __name__ == "__main__":
     # Change test case number for different scenarios
+    #test_code(test_cases[1])
+
     for test_case in test_cases:
         test_code(test_cases[test_case])
