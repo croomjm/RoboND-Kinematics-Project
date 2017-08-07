@@ -170,38 +170,90 @@ def _returnRrpy(self, quaternion):
 
 ##### Finding the Wrist Center
 
-To find the wrist center, I used fairly straight-forward trigonometry:
+To find the wrist center, subtracted d<sub>7</sub> (the length from the wrist center to the end effector center) along the end effector axis:
+ WC = P - d<sub>7</sub>R<sub>rpy</sub>[:3,3]
+ 
+ In code:
+ ```python
+ def _returnWristCenter(self, consts, ee_target, Rrpy):
+    #wrist center wc = [[wx], [wy], [wz]] in base coords
+    wc_target = ee_target - Rrpy*Matrix([0,0,consts['d7']])
+    wc_target = wc_target.evalf()
+
+    return wc_target
+ ```
 
  1. &#952;<sub>1</sub>:
 
- &#952;<sub>1</sub> = atan2(WC<sub>y</sub>, WC<sub>x</sub>
+  &#952;<sub>1</sub> = atan2(WC<sub>y</sub>, WC<sub>x</sub>)
 
- ![Calculating Theta 1][Theta 1]
+  ![Calculating Theta 1][Theta 1]
 
  2. &#952;<sub>2</sub> and &#952;<sub>3</sub>:
 
- To calculate &#952;<sub>2</sub> and &#952;<sub>3</sub>, I used the law of cosines combined with the construction shown below.
+  To calculate &#952;<sub>2</sub> and &#952;<sub>3</sub>, I used the law of cosines combined with the construction shown below.
 
- ![Theta 2 and 3 Construction][Law of Cosines]
+  ![Theta 2 and 3 Construction][Law of Cosines]
 
- The construction shows:
-  * Sides:
-   * link 2 (length a<sub>2</sub>)
-   * r<sub>24</sub>, a vector from the joint 2 frame to the joint 4 frame
-   * link 3 (as drawn directly from link 3 frame to the link 4 frame)
-  * Angles:
-   * a, the angle between \vec{r<sub>24</sub>} and link 2
-   * b, the angle between link 2 and link 3
-   * angle r<sub>24</sub>, the angle from the xy plane (base link) to \vec{r<sub>24</sub>}
+  The construction shows:
+   * Sides:
+    * link 2 (length a<sub>2</sub>)
+    * r<sub>24</sub>, a vector from the joint 2 frame to the joint 4 frame
+    * link 3 (as drawn directly from link 3 frame to the link 4 frame)
+   * Angles:
+    * a, the angle between r<sub>24</sub> and link 2
+    * b, the angle between link 2 and link 3
+    * angle r<sub>24</sub>, the angle from the xy plane (base link) to r<sub>24</sub>
+    * &#947;, the angle between the joint 2 Y axis and link 3 (angle of declination of link 3)
 
- The following equations are used to generate the correct values for \theta<sub>2</sub> and \theta<sub>3</sub>:
-  * l<sub>3</sub> = (d<sub>4</sub><sup>2</sup> + a<sub>3</sub><sup>2</sup>)<sup>0.5</sup>
-  * angle r<sub>24</sub> = atan2(r<sub>24,z</sub>, r<sub>24,xy</sub>
-  * \|r<sub>24</sub>\| = (r<sub>24,z</sub><sup>2</sup> + r<sub>24,xy</sub><sup>2</sup>)<sup>0.5</sup>
+  The following relationships are used to simplify the equations for calculating &#952;<sub>2</sub> and &#952;<sub>3</sub>:
+   * l<sub>3</sub> = (d<sub>4</sub><sup>2</sup> + a<sub>3</sub><sup>2</sup>)<sup>0.5</sup>
+   * angle r<sub>24</sub> = atan2(r<sub>24,z</sub>, r<sub>24,xy</sub>
+   * \|r<sub>24</sub>\| = (r<sub>24,z</sub><sup>2</sup> + r<sub>24,xy</sub><sup>2</sup>)<sup>0.5</sup>
+   * &#947; = atan2(-a<sub>3</sub>, d<sub>4</sub>
   
- From the law of cosines, we can see that:
-  l<sub>3</sub><sup>2</sup> = a<sub>2</sub><sup>2</sup> + \|r<sub>24</sub>\| - 2a<sub>2</sub>\|r<sub>24</sub>\|cos(a)
+  From the law of cosines, we can see that:
+   * l<sub>3</sub><sup>2</sup> = a<sub>2</sub><sup>2</sup> + \|r<sub>24</sub>\| - 2a<sub>2</sub>\|r<sub>24</sub>\|cos(a)
+   * \|r<sub>24</sub>\|<sup>2</sup> = a<sub>2</sub><sup>2</sup> + l<sub>3</sub><sup>2</sup> - 2a<sub>2</sub>l<sub>3</sub>cos(b)
+   
+  To find &#952;<sub>2</sub> and &#952;<sub>3</sub>, simply solve these relationships for angles a and b and note that:
+   * &#952;<sub>2</sub> = pi/2 - a - angle r<sub>24</sub>
+   * &#952;<sub>3</sub> = pi/2 - gamma - b
+   
+  Note: The relationship for &#952;<sub>2</sub> is only true when r<sub>24</sub> falls below link 2 in the construction. Otherwise, the relationship would be &#952;<sub>2</sub> = pi/2 + a - angle r<sub>24</sub>. Though it would be possible to check for this, I chose to just calculate &#952;<sub>2</sub> using the expression above since the range of travel of the robotic arm in the simulation should obey this constraint.
 
+ 2. &#952;<sub>4</sub>, &#952;<sub>5</sub>, and &#952;<sub>6</sub>:
+  To calculate &#952;<sub>4</sub>, &#952;<sub>5</sub>, and &#952;<sub>6</sub>, I used the following relationship:
+   R<sub>36</sub> = R<sub>03</sub><sup>T</sup>R<sub>06</sub>
+  
+  Furthermore, since R<sub>06</sub> is equivalent to R<sub>rpy</sub>, for each iteration, R<sub>36</sub> can be calculated numerically using:
+   R<sub>36</sub> = R<sub>03</sub><sup>T</sup>R<sub>rpy</sub>
+   
+  By examining the symbolic output of R<sub>36</sub> from sympy, I extracted the following relationships (for clarity, let R = R<sub>36</sub>):
+   * &#952;<sub>4</sub> = atan2(R<sub>33</sub>, -R<sub>13</sub>)
+   * &#952;<sub>5</sub> = atan2((R<sub>13</sub><sup>2</sup> + R<sub>33</sub><sup>2</sup>)<sup>0.5</sup>, R<sub>23</sub>)
+   * &#952;<sub>6</sub> = atan2(-R<sub>22</sub>, R<sub>21</sub>)
+   
+  In code:
+  ```python
+  def _returnTheta456(self, theta1, theta2, theta3, Rrpy):
+    '''
+    Calculate theta 4, theta5, theta6 based on relations
+    between elements in the rotation matrix from frame 3 to 6.
+    Uses knowledge that Rrpy should be equal to R_06.
+    '''
+    R_03 = self.T[(0,3)][:3,:3].evalf(subs = {self.q1: theta1,
+                                              self.q2: theta2,
+                                              self.q3: theta3})
+
+    R_36 = R_03.T*Rrpy
+
+    theta4 = atan2(R_36[2,2], -R_36[0,2])
+    theta5 = atan2((R_36[0,2]**2 + R_36[2,2]**2)**0.5, R_36[1,2])#acos(R_36[1,2])#
+    theta6 = atan2(-R_36[1,1], R_36[1,0])
+
+    return [theta4, theta5, theta6]
+  ```
 
 And here's another image! 
 
