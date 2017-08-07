@@ -1,42 +1,14 @@
-## Project: Kinematics Pick & Place
-### Writeup Template: You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
-
-**Steps to complete the project:**  
-
-
-1. Set up your ROS Workspace.
-2. Download or clone the [project repository](https://github.com/udacity/RoboND-Kinematics-Project) into the ***src*** directory of your ROS Workspace.  
-3. Experiment with the forward_kinematics environment and get familiar with the robot.
-4. Launch in [demo mode](https://classroom.udacity.com/nanodegrees/nd209/parts/7b2fd2d7-e181-401e-977a-6158c77bf816/modules/8855de3f-2897-46c3-a805-628b5ecf045b/lessons/91d017b1-4493-4522-ad52-04a74a01094c/concepts/ae64bb91-e8c4-44c9-adbe-798e8f688193).
-5. Perform Kinematic Analysis for the robot following the [project rubric](https://review.udacity.com/#!/rubrics/972/view).
-6. Fill in the `IK_server.py` with your Inverse Kinematics code. 
-
-
 [//]: # (Image References)
 
 [image1]: ./misc_images/misc1.png
 [image2]: ./misc_images/misc2.png
 [image3]: ./misc_images/misc3.png
-[DH_parameters]: ./misc_images/DH_parameters.png
+[DH_parameters]: ./misc_images/DH_parameters_definition.png
 [UDRF_frames]: ./misc_images/UDRF_file_frames.png
 [KR210_DH_params]: ./misc_images/KR210_DH_params.png
 [Theta1]: ...
 
-
-
-
-## [Rubric](https://review.udacity.com/#!/rubrics/972/view) Points
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
-
----
-### Writeup / README
-
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  
-
-You're reading it!
+## Project: Kinematics Pick & Place
 
 ### Kinematic Analysis
 #### 1. Determine the DH Parameters
@@ -183,13 +155,13 @@ To find the wrist center, subtracted d<sub>7</sub> (the length from the wrist ce
     return wc_target
  ```
 
- 1. &#952;<sub>1</sub>:
+##### Finding &#952;<sub>1</sub>:
 
   &#952;<sub>1</sub> = atan2(WC<sub>y</sub>, WC<sub>x</sub>)
 
   ![Calculating Theta 1][Theta 1]
 
- 2. &#952;<sub>2</sub> and &#952;<sub>3</sub>:
+##### Finding &#952;<sub>2</sub> and &#952;<sub>3</sub>:
 
   To calculate &#952;<sub>2</sub> and &#952;<sub>3</sub>, I used the law of cosines combined with the construction shown below.
 
@@ -222,7 +194,7 @@ To find the wrist center, subtracted d<sub>7</sub> (the length from the wrist ce
    
   Note: The relationship for &#952;<sub>2</sub> is only true when r<sub>24</sub> falls below link 2 in the construction. Otherwise, the relationship would be &#952;<sub>2</sub> = pi/2 + a - angle r<sub>24</sub>. Though it would be possible to check for this, I chose to just calculate &#952;<sub>2</sub> using the expression above since the range of travel of the robotic arm in the simulation should obey this constraint.
 
- 2. &#952;<sub>4</sub>, &#952;<sub>5</sub>, and &#952;<sub>6</sub>:
+##### Finding &#952;<sub>4</sub>, &#952;<sub>5</sub>, and &#952;<sub>6</sub>:
   To calculate &#952;<sub>4</sub>, &#952;<sub>5</sub>, and &#952;<sub>6</sub>, I used the following relationship:
    R<sub>36</sub> = R<sub>03</sub><sup>T</sup>R<sub>06</sub>
   
@@ -254,10 +226,6 @@ To find the wrist center, subtracted d<sub>7</sub> (the length from the wrist ce
 
     return [theta4, theta5, theta6]
   ```
-
-And here's another image! 
-
-![alt text][image2]
 
 ### Project Implementation
 
