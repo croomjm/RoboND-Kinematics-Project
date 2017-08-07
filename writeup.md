@@ -229,7 +229,22 @@ To find the wrist center, subtracted d<sub>7</sub> (the length from the wrist ce
 
 ### Project Implementation
 
-#### 1. Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results. 
+#### 1. `IK_Server.py` Implementation
+
+My goals in implementing IK_Server.py (beyond making a working implementation) were to keep things simple, fast, and easily testable.
+
+##### Testability and Simplicity
+In order to accomplish these, I broke out most of the functionality required for the IK server into a separate importable module, `IK.py`. Within `IK.py`, I imported the necessary modules and implemented a single class called Kuka_IK. I also made IK_Server into a self-contained class to aid in the initialization of Kuka_IK() within IK_Server.
+
+##### Speed
+  - Not using sympy as much as possible
+  - 
+  
+##### Possible Improvements
+  - Lambdifying all instances of Matrix() class
+  - 
+
+Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results. 
 
 
 Here I'll talk about the code, what techniques I used, what worked and why, where the implementation might fail and how I might improve it if I were going to pursue this project further.  
