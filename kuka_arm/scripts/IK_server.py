@@ -10,12 +10,6 @@ from mpmath import *
 from sympy import *
 from IK import Kuka_IK
 
-class Pose_Error(object):
-    #class to record position and orientation error
-    #for each IK iteration
-    def __init__(self):
-        pass
-
 class handle_IK(object):
     def __init__(self):
         #instantiate Kuka_IK object
