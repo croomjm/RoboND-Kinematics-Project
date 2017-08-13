@@ -251,15 +251,17 @@ I tried to optimized the program's performance by avoiding these operations as m
   3. Avoid matrix multiplication in inverse kinematics evaluation where possible
   
 Using these approaches, I was able to get individual inverse kinematics calculations down to ~0.1 seconds.
+
+##### Success!
+Click through below for a video of one of the successful runs (6X speed)
+[![Successful Grasp](./misc_images/Successful_grasp.png)](https://youtu.be/j2d7W9LQCgI "Successful Grasp")
   
 ##### Possible Improvements
 The speed of the inverse kinematics could definitely be improved by replacing all sympy matrices with lambda functions that return numpy matrices when passed numerical values for variables. Luckily, sympy includes a function for this called lambdify().
 
 If I were concerned about operating the arm in a larger portion of the robot configuration space, then more general approaches to the inverse kinematics would be required. For example, my method for calculation of &#952;<sub>2</sub> is only valid within a relatively narrow set of joint positions (as noted in section 3). A simple way around this issue would be to consider IK solutions for various combinations of joint angles and use each possible answer for each joint to calculate a forward kinematics solution for the wrist center. Based on the prediction of the wrist center, the combinations of solutions for each joint that yields the best predicted joint error could be used.
 
-I also came across a bug indicative instabilities in the Gazebo environment that I was lucky enough to capture on video. Seems like this might be something to fix in future iterations:
-[![Kuka Arm Blowing Up](https://img.youtube.com/vi/StTqXEQ2l-Y/0.jpg)](https://www.youtube.com/watch?v=StTqXEQ2l-Y "Everything Is AWESOME")
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/BkZPh5znE5E" frameborder="0" allowfullscreen></iframe>
+I also came across a bug indicative instabilities in the Gazebo environment that I was lucky enough to capture on video. Seems like this might be something to fix in future iterations (click through for video):
+[![Kuka Arm Blowing Up](./misc_images/Blowing_up_arm.png)](https://youtu.be/BkZPh5znE5E "Arm Blowing Up")
 
 
