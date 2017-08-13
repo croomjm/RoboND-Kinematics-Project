@@ -236,21 +236,30 @@ My goals in implementing IK_Server.py (beyond making a working implementation) w
 ##### Testability and Simplicity
 In order to accomplish these, I broke out most of the functionality required for the IK server into a separate importable module, `IK.py`. Within `IK.py`, I imported the necessary modules and implemented a single class called Kuka_IK. I also made IK_Server into a self-contained class to aid in the initialization of Kuka_IK() within IK_Server.
 
+Using this method, I was able to directly call the overall inverse kinematics method as well as methods for solving individual portions of the inverse kinematics problem, which was helpful for debugging.
+
 ##### Speed
-  - Not using sympy as much as possible
-  - 
+I noticed the code template provided as a starting point for this project was quite bogged down from the following operations:
+  1. Initializing sympy transformation matrices
+  2. Simplifying symbolic sympy expressions
+  3. Substituting numerical values into symbolic sympy matrices
+  4. Multiplying sympy matrices together
+ 
+I tried to optimized the program's performance by avoiding these operations as much as possible. In refactoring the IK code, I chose to:
+  1. Initialize the sympy matrices once instead of every iteration
+  2. Completely eliminate calls to sympy's simplify() function
+  3. Avoid matrix multiplication in inverse kinematics evaluation where possible
+  
+Using these approaches, I was able to get individual inverse kinematics calculations down to ~0.1 seconds.
   
 ##### Possible Improvements
-  - Lambdifying all instances of Matrix() class
-  - 
+The speed of the inverse kinematics could definitely be improved by replacing all sympy matrices with lambda functions that return numpy matrices when passed numerical values for variables. Luckily, sympy includes a function for this called lambdify().
 
-Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results. 
+If I were concerned about operating the arm in a larger portion of the robot configuration space, then more general approaches to the inverse kinematics would be required. For example, my method for calculation of &#952;<sub>2</sub> is only valid within a relatively narrow set of joint positions (as noted in section 3). A simple way around this issue would be to consider IK solutions for various combinations of joint angles and use each possible answer for each joint to calculate a forward kinematics solution for the wrist center. Based on the prediction of the wrist center, the combinations of solutions for each joint that yields the best predicted joint error could be used.
 
+I also came across a bug indicative instabilities in the Gazebo environment that I was lucky enough to capture on video. Seems like this might be something to fix in future iterations:
+[![Kuka Arm Blowing Up](https://img.youtube.com/vi/StTqXEQ2l-Y/0.jpg)](https://www.youtube.com/watch?v=StTqXEQ2l-Y "Everything Is AWESOME")
 
-Here I'll talk about the code, what techniques I used, what worked and why, where the implementation might fail and how I might improve it if I were going to pursue this project further.  
-
-
-And just for fun, another example image:
-![alt text][image3]
+<iframe width="560" height="315" src="https://www.youtube.com/embed/BkZPh5znE5E" frameborder="0" allowfullscreen></iframe>
 
 
