@@ -25,7 +25,7 @@ Base | (0, 0, 0) | (0, 0, 0) | (0, 0, 0) | N/A | N/A
 Where positions are with respect to the preceding link in the preceding link's coordinate frame.
 
 To derive the modified DH parameters, I used definitions as shown in the image below:
-<img src="./misc_images/DH_parameters_definition.png" alt="Modified DH Parameters Definitions" width=800></img>
+<img src="./misc_images/DH_parameters_definition.png" alt="Modified DH Parameters Definitions" width=600></img>
 
 Where:
  * &alpha;<sub>i−1</sub>  (twist angle) = angle between Z<sub>i-1</sub> and Z<sub>i</sub> measured about X<sub>i-1</sub>in a right-hand sense
@@ -34,7 +34,7 @@ Where:
  * &theta;<sub>i</sub> (joint angle) = angle between X<sub>i-1</sub> and X<sub>i</sub> measured about Z<sub>i</sub> in a right-hand sense
 
 For the Kuka KR210, the DH parameter layout looks as follows:
-<img src="./misc_images/KR210_DH_params.png" alt="KR210 DH Parameters" width=800></img>
+<img src="./misc_images/KR210_DH_params.png" alt="KR210 DH Parameters" width=600></img>
 
 i | a<sub>i-1</sub> (m) | &alpha;<sub>i-1</sub> (deg) | d<sub>i</sub> (m) | &theta;<sub>i</sub> (deg)
 :---:|:---:|:---:|:---:|:---:
@@ -254,7 +254,7 @@ Click through below for a video of one of the successful runs (6X speed)
 ##### Possible Improvements
 The speed of the inverse kinematics could definitely be improved by replacing all sympy matrices with lambda functions that return numpy matrices when passed numerical values for variables. Luckily, sympy includes a function for this called lambdify().
 
-If I were concerned about operating the arm in a larger portion of the robot configuration space, then more general approaches to the inverse kinematics would be required. For example, my method for calculation of &#952;<sub>2</sub> is only valid within a relatively narrow set of joint positions (as noted in section 3). A simple way around this issue would be to consider IK solutions for various combinations of joint angles and use each possible answer for each joint to calculate a forward kinematics solution for the wrist center. Based on the prediction of the wrist center, the combinations of solutions for each joint that yields the best predicted joint error could be used.
+If I were concerned about operating the arm in a larger portion of the robot configuration space, then more general approaches to the inverse kinematics would be required. For example, my method for calculation of &#952;<sub>2</sub> is only valid within a relatively narrow set of joint positions (as noted in "Finding &theta;<sub>2</sub> and &theta;<sub>3</sub>"). A simple way around this issue would be to consider IK solutions for various combinations of joint angles and use each possible answer for each joint to calculate a forward kinematics solution for the wrist center. Based on the prediction of the wrist center, the combinations of solutions for each joint that yields the best predicted joint error could be used.
 
 I also came across a bug indicative instabilities in the Gazebo environment that I was lucky enough to capture on video. Seems like this might be something to fix in future iterations (click through for video):
 [![Kuka Arm Blowing Up](./misc_images/Blowing_up_arm.png)](https://youtu.be/BkZPh5znE5E "Arm Blowing Up")
