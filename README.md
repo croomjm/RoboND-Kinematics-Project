@@ -8,7 +8,7 @@
 
 ### Project Implementation
 
-Note: The Uducity-produced explanation of the baseline project is located [here](./Udacity_README.md). The following summarizes my approach to the project and observed results. In short, this project required detail understanding of DH parameters in order to derive the forward and inverse kinematics of a Kuka robot arm (simulated in Gazebo on a linux VM with ROS). Using the python sympy library, I created an inverse kinematics library for the Kuka robot to calculate the appropriate joint positions to achieve an end effector position and orienation (supplied by the Udacity project software). The Udacity software then took the output of my function, planned a feasible path to reach the goal orientation, and executed that move to pick up a simulated object.
+Note: The Uducity-produced explanation of the baseline project is located [here](./Udacity_README.md). The following summarizes my approach to the project and observed results. In short, this project required a detailed understanding of modified DH parameters in order to derive the forward and inverse kinematics of a Kuka robot arm (simulated in Gazebo on a linux VM with ROS). Using the python sympy library, I created an inverse kinematics library for the Kuka robot to calculate the appropriate joint positions to achieve an end effector position and orienation (supplied by the Udacity project software). The Udacity software then took the output of my function, planned a feasible path to reach the goal orientation, and executed that move to pick up a simulated object.
 
 #### 1. `IK_Server.py` Implementation
 
